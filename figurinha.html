@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Controle de Figurinhas – Copa 2026</title>
+
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        background: linear-gradient(135deg, #002868, #bf0a30);
+        padding: 20px;
+        color: #fff;
+    }
+    .container {
+        max-width: 750px;
+        margin: auto;
+        background: #ffffffdd;
+        color: #000;
+        padding: 20px;
+        border-radius: 12px;
+        box-shadow: 0 0 12px #0006;
+    }
+    h1 {
+        text-align: center;
+        color: #002868;
+    }
+    input, button {
+        padding: 10px;
+        margin: 5px 0;
+        width: 100%;
+        font-size: 16px;
+    }
+    button {
+        cursor: pointer;
+        background: #002868;
+        color: white;
+        border: none;
+        border-radius: 6px;
+    }
+    button:hover {
+        background: #bf0a30;
+    }
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 15px;
+    }
+    th, td {
+        border: 1px solid #ddd;
+        padding: 8px;
+        text-align: center;
+    }
+    th {
+        background: #002868;
+        color: white;
+    }
+</style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Álbum Copa do Mundo 2026 – Controle de Repetidas</h1>
+
+    <label>Adicionar figurinha:</label>
+    <input type="text" id="figInput" placeholder="Ex: 123, BR1, Mascote">
+    <button onclick="adicionar()">Adicionar</button>
+
+    <label>Buscar:</label>
+    <input type="text" id="buscarInput" onkeyup="buscar()" placeholder="Digite para filtrar...">
+
+    <h3>Total de repetidas: <span id="total">0</span></h3>
+
+    <button onclick="exportarExcel()">Exportar para Excel</button>
+
+    <label style="margin-top:10px;">Importar lista (TXT ou CSV):</label>
+    <input type="file" id="upload" accept=".txt,.csv" onchange="importarLista()">
+
+    <table id="tabela">
+        <thead>
+            <tr>
+                <th>Figurinha</th>
+                <th>Quantidade</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+</div>
+
+<script>
+// -------------------------------
+// VARIÁVEIS E CARREGAMENTO
+// -------------------------------
+let figurinhas = {};
+
+window.onload = function() {
+    const salvo = localStorage.getItem("copa2026");
+    if (salvo) {
+        figurinhas = JSON.parse(salvo);
+        atualizarTabela();
+    }
+};
+
+// -------------------------------
+// SALVAR NO NAVEGADOR
+// -------------------------------
+function salvar() {
+    localStorage.setItem("copa2026", JSON.stringify(figurinhas));
+}
+
+// -------------------------------
+// ATUALIZAR TABELA
+// -------------------------------
+function atualizarTabela() {
+    const tbody = document.querySelector("#tabela tbody");
+    tbody.innerHTML = "";
+
+    for (let fig in figurinhas) {
+        let linha = `<tr>
+            <td>${fig}</td>
+            <td>${figurinhas[fig]}</td>
+        </tr>`;
+        tbody.innerHTML += linha;
+    }
+
+    document.getElementById("total").innerText =
+        Object.values(figurinhas).reduce((a, b) => a + b, 0);
+
+    salvar();
+}
+
+// -------------------------------
+// ADICIONAR FIGURINHA
+// -------------------------------
+function adicionar() {
+    let fig = document.getElementById("figInput").value.trim();
+    if (fig === "") return;
+
+    if (!figurinhas[fig]) figurinhas[fig] = 0;
+    figurinhas[fig]++;
+
+    document.getElementById("figInput").value = "";
+    atualizarTabela();
+}
+
+// -------------------------------
+// BUSCAR
+// -------------------------------
+function buscar() {
+    let filtro = document.getElementById("buscarInput").value.toLowerCase();
+    let linhas = document.querySelectorAll("#tabela tbody tr");
+
+    linhas.forEach(linha => {
+        let texto = linha.innerText.toLowerCase();
+        linha.style.display = texto.includes(filtro) ? "" : "none";
+    });
+}
+
+// -------------------------------
+// EXPORTAR PARA EXCEL
+// -------------------------------
+function exportarExcel() {
+    let conteudo = "Figurinha,Quantidade\n";
+
+    for (let fig in figurinhas) {
+        conteudo += `${fig},${figurinhas[fig]}\n`;
+    }
+
+    let blob = new Blob([conteudo], { type: "text/csv;charset=utf-8;" });
+    let url = URL.createObjectURL(blob);
+
+    let a = document.createElement("a");
+    a.href = url;
+    a.download = "repetidas_copa2026.csv";
+    a.click();
+}
+
+// -------------------------------
+// IMPORTAR LISTA
+// -------------------------------
+function importarLista() {
+    const arquivo = document.getElementById("upload").files[0];
+    if (!arquivo) return;
+
+    const leitor = new FileReader();
+
+    leitor.onload = function(e) {
+        const linhas = e.target.result.split(/\r?\n/);
+
+        linhas.forEach(linha => {
+            let fig = linha.trim();
+            if (fig !== "") {
+                if (!figurinhas[fig]) figurinhas[fig] = 0;
+                figurinhas[fig]++;
+            }
+        });
+
+        atualizarTabela();
+    };
+
+    leitor.readAsText(arquivo);
+}
+</script>
+
+</body>
+</html>
