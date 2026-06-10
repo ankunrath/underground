@@ -12,7 +12,7 @@
         color: #fff;
     }
     .container {
-        max-width: 750px;
+        max-width: 850px;
         margin: auto;
         background: #ffffffdd;
         color: #000;
@@ -24,7 +24,7 @@
         text-align: center;
         color: #002868;
     }
-    input, button {
+    input, button, select {
         padding: 10px;
         margin: 5px 0;
         width: 100%;
@@ -53,6 +53,12 @@
     th {
         background: #002868;
         color: white;
+        cursor: pointer;
+    }
+    .btn-small {
+        padding: 5px 8px;
+        font-size: 14px;
+        margin: 2px;
     }
 </style>
 </head>
@@ -78,8 +84,9 @@
     <table id="tabela">
         <thead>
             <tr>
-                <th>Figurinha</th>
-                <th>Quantidade</th>
+                <th onclick="ordenar('nome')">Figurinha ⬍</th>
+                <th onclick="ordenar('qtd')">Quantidade ⬍</th>
+                <th>Ações</th>
             </tr>
         </thead>
         <tbody></tbody>
@@ -91,6 +98,7 @@
 // VARIÁVEIS E CARREGAMENTO
 // -------------------------------
 let figurinhas = {};
+let ordem = "nome"; // padrão
 
 window.onload = function() {
     const salvo = localStorage.getItem("copa2026");
@@ -108,19 +116,40 @@ function salvar() {
 }
 
 // -------------------------------
+// ORDENAR TABELA
+// -------------------------------
+function ordenar(tipo) {
+    ordem = tipo;
+    atualizarTabela();
+}
+
+// -------------------------------
 // ATUALIZAR TABELA
 // -------------------------------
 function atualizarTabela() {
     const tbody = document.querySelector("#tabela tbody");
     tbody.innerHTML = "";
 
-    for (let fig in figurinhas) {
+    let lista = Object.keys(figurinhas);
+
+    if (ordem === "nome") {
+        lista.sort();
+    } else {
+        lista.sort((a, b) => figurinhas[b] - figurinhas[a]);
+    }
+
+    lista.forEach(fig => {
         let linha = `<tr>
-            <td>${fig}</td>
+            <td ondblclick="editar('${fig}')">${fig}</td>
             <td>${figurinhas[fig]}</td>
+            <td>
+                <button class="btn-small" onclick="alterarQtd('${fig}', 1)">+1</button>
+                <button class="btn-small" onclick="alterarQtd('${fig}', -1)">-1</button>
+                <button class="btn-small" onclick="removerTudo('${fig}')">Excluir</button>
+            </td>
         </tr>`;
         tbody.innerHTML += linha;
-    }
+    });
 
     document.getElementById("total").innerText =
         Object.values(figurinhas).reduce((a, b) => a + b, 0);
@@ -139,6 +168,49 @@ function adicionar() {
     figurinhas[fig]++;
 
     document.getElementById("figInput").value = "";
+    atualizarTabela();
+}
+
+// -------------------------------
+// ALTERAR QUANTIDADE (+1 / -1)
+// -------------------------------
+function alterarQtd(fig, valor) {
+    figurinhas[fig] += valor;
+
+    if (figurinhas[fig] <= 0) {
+        delete figurinhas[fig];
+    }
+
+    atualizarTabela();
+}
+
+// -------------------------------
+// REMOVER TUDO (com confirmação)
+// -------------------------------
+function removerTudo(fig) {
+    if (confirm(`Deseja remover TODAS as unidades da figurinha "${fig}"?`)) {
+        delete figurinhas[fig];
+        atualizarTabela();
+    }
+}
+
+// -------------------------------
+// EDITAR NOME DA FIGURINHA
+// -------------------------------
+function editar(fig) {
+    let novo = prompt("Editar nome da figurinha:", fig);
+    if (!novo || novo.trim() === "") return;
+
+    novo = novo.trim();
+
+    if (figurinhas[novo]) {
+        alert("Já existe uma figurinha com esse nome!");
+        return;
+    }
+
+    figurinhas[novo] = figurinhas[fig];
+    delete figurinhas[fig];
+
     atualizarTabela();
 }
 
