@@ -118,6 +118,9 @@
 
     <h3>Total de repetidas: <span id="total">0</span></h3>
 
+    <button onclick="compartilharTexto()">Compartilhar lista</button>
+    <button onclick="copiarTexto()">Copiar lista</button>
+    
     <button onclick="exportarExcel()">Exportar para Excel</button>
 
     <label style="margin-top:10px;">Importar lista (TXT ou CSV):</label>
@@ -312,6 +315,50 @@ function importarLista() {
     };
 
     leitor.readAsText(arquivo);
+}
+    // -------------------------------
+// GERAR TEXTO DA LISTA
+// -------------------------------
+function gerarTexto() {
+    let texto = "Minhas figurinhas repetidas – Copa 2026:\n\n";
+
+    let lista = Object.keys(figurinhas).sort();
+
+    lista.forEach(fig => {
+        texto += `${fig}: ${figurinhas[fig]}\n`;
+    });
+
+    texto += `\nTotal: ${Object.values(figurinhas).reduce((a, b) => a + b, 0)}`;
+
+    return texto;
+}
+
+// -------------------------------
+// COMPARTILHAR (WhatsApp / nativo)
+// -------------------------------
+function compartilharTexto() {
+    const texto = gerarTexto();
+
+    if (navigator.share) {
+        navigator.share({
+            title: "Minhas repetidas – Copa 2026",
+            text: texto
+        });
+    } else {
+        // fallback para WhatsApp
+        const url = "https://wa.me/?text=" + encodeURIComponent(texto);
+        window.open(url, "_blank");
+    }
+}
+
+// -------------------------------
+// COPIAR PARA ÁREA DE TRANSFERÊNCIA
+// -------------------------------
+function copiarTexto() {
+    const texto = gerarTexto();
+    navigator.clipboard.writeText(texto)
+        .then(() => alert("Lista copiada!"))
+        .catch(() => alert("Erro ao copiar."));
 }
 </script>
 
