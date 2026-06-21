@@ -7,12 +7,12 @@
 <style>
     body {
         font-family: Arial, sans-serif;
-        background: #e9eef3;
+        background: #eef2f5;
         padding: 20px;
     }
 
     .widget {
-        max-width: 600px;
+        max-width: 700px;
         margin: auto;
         background: white;
         padding: 20px;
@@ -28,20 +28,23 @@
         color: #1a73e8;
     }
 
-    .match {
-        padding: 14px;
-        border-bottom: 1px solid #ddd;
+    .card {
+        background: #f9fafc;
+        padding: 15px;
+        border-radius: 12px;
+        margin-bottom: 15px;
         display: flex;
         justify-content: space-between;
         align-items: center;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.08);
         transition: 0.2s;
     }
 
-    .match:hover {
-        background: #f7f9fc;
+    .card:hover {
+        background: #f1f5fb;
     }
 
-    .teams {
+    .team {
         display: flex;
         align-items: center;
         gap: 10px;
@@ -49,26 +52,23 @@
     }
 
     .flag {
-        width: 28px;
-        height: 20px;
+        width: 32px;
+        height: 22px;
         border-radius: 3px;
-        object-fit: cover;
         border: 1px solid #ccc;
+        object-fit: cover;
     }
 
     .score {
-        font-size: 20px;
+        font-size: 22px;
         font-weight: bold;
         color: #222;
     }
 
-    .phase {
-        margin-top: 25px;
-        font-size: 18px;
-        font-weight: bold;
-        color: #444;
-        border-left: 4px solid #1a73e8;
-        padding-left: 10px;
+    .warning {
+        text-align: center;
+        color: #777;
+        margin-top: 20px;
     }
 </style>
 </head>
@@ -76,76 +76,99 @@
 
 <div class="widget">
     <h2>Resultados da Copa 2026</h2>
-    <div id="results"></div>
+    <div id="results">Carregando dados da Wikipedia...</div>
 </div>
 
 <script>
-// ===============================
-// EDITAR AQUI OS RESULTADOS
-// ===============================
-const jogos = [
-    {
-        fase: "Fase de Grupos",
-        casa: "Brasil",
-        bandeiraCasa: "https://flagcdn.com/w40/br.png",
-        fora: "França",
-        bandeiraFora: "https://flagcdn.com/w40/fr.png",
-        placar: "2 x 1"
-    },
-    {
-        fase: "Fase de Grupos",
-        casa: "Argentina",
-        bandeiraCasa: "https://flagcdn.com/w40/ar.png",
-        fora: "México",
-        bandeiraFora: "https://flagcdn.com/w40/mx.png",
-        placar: "3 x 0"
-    },
-    {
-        fase: "Fase de Grupos",
-        casa: "Espanha",
-        bandeiraCasa: "https://flagcdn.com/w40/es.png",
-        fora: "Alemanha",
-        bandeiraFora: "https://flagcdn.com/w40/de.png",
-        placar: "1 x 1"
-    }
-];
+// Mapa de países -> códigos ISO para bandeiras
+const bandeiras = {
+    "Brasil": "br",
+    "França": "fr",
+    "Alemanha": "de",
+    "Argentina": "ar",
+    "México": "mx",
+    "Espanha": "es",
+    "Portugal": "pt",
+    "Inglaterra": "gb",
+    "Estados Unidos": "us",
+    "Canadá": "ca",
+    "Japão": "jp",
+    "Coreia do Sul": "kr",
+    "Itália": "it",
+    "Holanda": "nl",
+    "Uruguai": "uy",
+    "Chile": "cl"
+    // posso adicionar TODOS os países se quiser
+};
 
-// ===============================
-// NÃO PRECISA MEXER DAQUI PRA BAIXO
-// ===============================
-function carregarResultados() {
-    const container = document.getElementById("results");
-    container.innerHTML = "";
+async function carregarWikipedia() {
+    const url =
+        "https://pt.wikipedia.org/w/api.php?action=parse&page=Copa_do_Mundo_FIFA_de_2026&format=json&origin=*";
 
-    let faseAtual = "";
+    try {
+        const response = await fetch(url);
+        const data = await response.json();
 
-    jogos.forEach(jogo => {
+        const html = data.parse.text["*"];
 
-        if (jogo.fase !== faseAtual) {
-            faseAtual = jogo.fase;
-            const faseDiv = document.createElement("div");
-            faseDiv.className = "phase";
-            faseDiv.textContent = faseAtual;
-            container.appendChild(faseDiv);
+        const temp = document.createElement("div");
+        temp.innerHTML = html;
+
+        // procura tabelas de jogos
+        const tabelas = temp.querySelectorAll("table");
+
+        const container = document.getElementById("results");
+        container.innerHTML = "";
+
+        if (tabelas.length === 0) {
+            container.innerHTML =
+                "<div class='warning'>A Wikipedia ainda não publicou os jogos da Copa 2026.</div>";
+            return;
         }
 
-        const div = document.createElement("div");
-        div.className = "match";
-        div.innerHTML = `
-            <div class="teams">
-                <img class="flag" src="${jogo.bandeiraCasa}">
-                ${jogo.casa}
-                <span style="color:#888;">vs</span>
-                ${jogo.fora}
-                <img class="flag" src="${jogo.bandeiraFora}">
-            </div>
-            <div class="score">${jogo.placar}</div>
-        `;
-        container.appendChild(div);
-    });
+        // percorre todas as tabelas e extrai jogos
+        tabelas.forEach(tabela => {
+            const linhas = tabela.querySelectorAll("tr");
+
+            linhas.forEach(linha => {
+                const colunas = linha.querySelectorAll("td");
+                if (colunas.length < 3) return;
+
+                const time1 = colunas[0].innerText.trim();
+                const placar = colunas[1].innerText.trim();
+                const time2 = colunas[2].innerText.trim();
+
+                if (!time1 || !placar || !time2) return;
+
+                const card = document.createElement("div");
+                card.className = "card";
+
+                card.innerHTML = `
+                    <div class="team">
+                        <img class="flag" src="https://flagcdn.com/w40/${bandeiras[time1] || 'un'}.png">
+                        ${time1}
+                    </div>
+
+                    <div class="score">${placar}</div>
+
+                    <div class="team">
+                        ${time2}
+                        <img class="flag" src="https://flagcdn.com/w40/${bandeiras[time2] || 'un'}.png">
+                    </div>
+                `;
+
+                container.appendChild(card);
+            });
+        });
+
+    } catch (error) {
+        document.getElementById("results").innerHTML =
+            "Erro ao carregar dados da Wikipedia.";
+        console.error(error);
+    }
 }
 
-carregarResultados();
+carregarWikipedia();
 </script>
 
 </body>
