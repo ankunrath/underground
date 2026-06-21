@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <title>Resultados da Copa 2026</title>
+
 <style>
     body {
         font-family: Arial, sans-serif;
@@ -51,43 +52,36 @@
 
 <div class="widget">
     <h2>Resultados da Copa 2026</h2>
-    <div id="results">Carregando...</div>
+    <div id="results"></div>
 </div>
 
 <script>
-async function carregarResultados() {
-    const url = "https://api.openligadb.de/getmatchdata/worldcup2026";
+// ===============================
+// EDITAR AQUI OS RESULTADOS
+// ===============================
+const jogos = [
+    { casa: "Brasil", fora: "França", placar: "2 x 1" },
+    { casa: "Argentina", fora: "México", placar: "3 x 0" },
+    { casa: "Espanha", fora: "Alemanha", placar: "1 x 1" },
+    // Adicione mais jogos aqui...
+];
 
-    try {
-        const response = await fetch(url);
-        const jogos = await response.json();
+// ===============================
+// NÃO PRECISA MEXER DAQUI PRA BAIXO
+// ===============================
+function carregarResultados() {
+    const container = document.getElementById("results");
+    container.innerHTML = "";
 
-        const container = document.getElementById("results");
-        container.innerHTML = "";
-
-        jogos.forEach(jogo => {
-            if (!jogo.MatchIsFinished) return; // só jogos finalizados
-
-            const home = jogo.Team1.TeamName;
-            const away = jogo.Team2.TeamName;
-
-            const golsHome = jogo.MatchResults[0]?.PointsTeam1 ?? "-";
-            const golsAway = jogo.MatchResults[0]?.PointsTeam2 ?? "-";
-
-            const div = document.createElement("div");
-            div.className = "match";
-            div.innerHTML = `
-                <div class="teams">${home} vs ${away}</div>
-                <div class="score">${golsHome} x ${golsAway}</div>
-            `;
-
-            container.appendChild(div);
-        });
-
-    } catch (error) {
-        document.getElementById("results").innerHTML = "Erro ao carregar resultados.";
-        console.error(error);
-    }
+    jogos.forEach(jogo => {
+        const div = document.createElement("div");
+        div.className = "match";
+        div.innerHTML = `
+            <div class="teams">${jogo.casa} vs ${jogo.fora}</div>
+            <div class="score">${jogo.placar}</div>
+        `;
+        container.appendChild(div);
+    });
 }
 
 carregarResultados();
